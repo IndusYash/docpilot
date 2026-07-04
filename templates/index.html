@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docpilot Engine - Professional Document Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 28, 45, 0.4);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.35);
+            --accent-green: #10b981;
+            --accent-green-glow: rgba(16, 185, 129, 0.3);
+            --accent-red: #ef4444;
+            --accent-red-glow: rgba(239, 68, 68, 0.3);
+            --text-color: #e2e8f0;
+            --text-muted: #94a3b8;
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 10% 20%, rgba(12, 22, 47, 0.6) 0%, rgba(9, 12, 21, 0.9) 90%);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Header Style */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 3rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        /* Glass Cards */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Section Layouts */
+        .step-container {
+            display: none;
+        }
+
+        .step-container.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        /* Setup Screen Style */
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 500;
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.85rem 1.2rem;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8);
+            color: white;
+            border: none;
+            padding: 0.95rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--accent-green), #047857);
+            box-shadow: 0 4px 15px var(--accent-green-glow);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--accent-red), #b91c1c);
+            box-shadow: 0 4px 15px var(--accent-red-glow);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+        }
+
+        /* Split Columns for Outline Screen */
+        .outline-columns {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .outline-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .outline-tree {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        .tree-node {
+            margin-bottom: 1.25rem;
+            padding-left: 0.5rem;
+            border-left: 2px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .tree-node-heading {
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tree-node-sub {
+            padding-left: 1.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .tree-node-sub-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Console styling */
+        .console-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console-window {
+            background-color: #050811;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            height: 400px;
+            overflow-y: auto;
+            padding: 1.5rem;
+            font-family: var(--font-code);
+            font-size: 0.88rem;
+            color: #38bdf8;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .log-entry {
+            white-space: pre-wrap;
+            animation: fadeIn 0.15s ease-out;
+        }
+
+        .log-entry.important {
+            color: #f43f5e;
+            font-weight: 600;
+        }
+
+        .log-entry.success {
+            color: #34d399;
+            font-weight: 600;
+        }
+
+        /* Quality Gate Panel */
+        .quality-results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 576px) {
+            .quality-results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .metric-score {
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .metric-score.pass {
+            color: var(--accent-green);
+            text-shadow: 0 0 20px var(--accent-green-glow);
+        }
+
+        .metric-score.fail {
+            color: var(--accent-red);
+            text-shadow: 0 0 20px var(--accent-red-glow);
+        }
+
+        .metric-label {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .metric-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            max-width: 250px;
+        }
+
+        /* Document Preview Frame */
+        .preview-frame {
+            background: #ffffff;
+            color: #1e293b;
+            border-radius: 12px;
+            padding: 3rem;
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            margin-bottom: 2.5rem;
+        }
+
+        .preview-doc-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1rem;
+            color: #0f172a;
+        }
+
+        .preview-section {
+            margin-bottom: 2rem;
+        }
+
+        .preview-section-heading {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #1e293b;
+        }
+
+        .preview-section-content {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            color: #334155;
+            text-align: justify;
+        }
+
+        .preview-subsection {
+            margin-left: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-subsection-heading {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #475569;
+        }
+
+        .action-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <div class="logo-icon">D</div>
+                <div class="logo-text">
+                    <h1>Docpilot Engine</h1>
+                    <p>Ragas Quality Guarded Document Generator</p>
+                </div>
+            </div>
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span id="system-status">System Idle</span>
+            </div>
+        </header>
+
+        <!-- STEP 1: Topic Input -->
+        <div id="step-setup" class="step-container active">
+            <div class="card">
+                <h2 style="margin-bottom: 1.5rem;">Configure Document Generation</h2>
+                <div class="setup-grid">
+                    <div class="form-group">
+                        <label for="topic">What is the topic of your document?</label>
+                        <input type="text" id="topic" placeholder="e.g. Computer Vision Applications in Healthcare" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pages">Target Page Count (Word layout scaling)</label>
+                        <input type="number" id="pages" min="1" max="10" value="1" required>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn" id="btn-generate-outline">
+                            Generate Outline
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: Outline View & Revision -->
+        <div id="step-outline" class="step-container">
+            <div class="card">
+                <h2 style="margin-bottom: 1.5rem;">Review & Approve Outline</h2>
+                <div class="outline-columns">
+                    <div>
+                        <h3 style="margin-bottom: 0.75rem; font-size: 1.1rem; color: var(--text-muted);">Proposed Outline Tree</h3>
+                        <div class="outline-tree" id="outline-display-container">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label for="feedback">Provide Revision Feedback (Optional)</label>
+                            <textarea id="feedback" rows="5" placeholder="e.g. Add a section about YOLOv8 models under Key Concepts."></textarea>
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <button class="btn btn-secondary" id="btn-submit-feedback" style="flex: 1;">
+                                Revise Outline
+                            </button>
+                            <button class="btn btn-success" id="btn-approve-outline" style="flex: 1;">
+                                Approve & Generate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: Generation & Formatting Log -->
+        <div id="step-generating" class="step-container">
+            <div class="card console-container">
+                <div class="console-header">
+                    <h2>Formatting & Fitting Pipeline</h2>
+                    <span style="font-size: 0.9rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="spinner"></div> Processing Document
+                    </span>
+                </div>
+                <div class="console-window" id="console-output">
+                    <div class="log-entry">Initializing background pipeline thread...</div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 4: Review Decision & Download -->
+        <div id="step-decision" class="step-container">
+            <div class="card" style="padding-bottom: 1.5rem;">
+                <h2 style="margin-bottom: 1.5rem;">Quality Verification Review</h2>
+                
+                <div class="quality-results-grid">
+                    <div class="metric-card">
+                        <div class="metric-score" id="score-faithfulness">0.00</div>
+                        <div class="metric-label">Faithfulness Score</div>
+                        <div class="metric-desc">Checks whether the document is grounded in and factual to the outline (Threshold: &ge; 0.85).</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-score" id="score-coherence">0</div>
+                        <div class="metric-label">Coherence Score</div>
+                        <div class="metric-desc">Checks whether the text structure, narrative, and transition are clean and readable.</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-bottom: 1rem;">Document Text Preview</h3>
+                <div class="preview-frame" id="doc-preview">
+                    <!-- Preview content populated dynamically -->
+                </div>
+
+                <div class="action-footer">
+                    <div id="decision-prompt-msg" style="margin-right: auto; color: var(--text-muted); font-size: 0.95rem;"></div>
+                    <button class="btn btn-danger" id="btn-reject">Reject & Delete</button>
+                    <button class="btn btn-success" id="btn-accept">Accept & Download</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTaskId = null;
+        let currentFilename = null;
+
+        // Utility to switch active views
+        function showStep(stepId) {
+            document.querySelectorAll('.step-container').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        function updateSystemStatus(text) {
+            document.getElementById('system-status').innerText = text;
+        }
+
+        // Action: Generate Outline
+        document.getElementById('btn-generate-outline').addEventListener('click', async () => {
+            const topic = document.getElementById('topic').value.trim();
+            const pages = parseInt(document.getElementById('pages').value);
+
+            if (!topic) {
+                alert('Please enter a topic.');
+                return;
+            }
+
+            updateSystemStatus('Generating Outline...');
+            document.getElementById('btn-generate-outline').disabled = true;
+            document.getElementById('btn-generate-outline').innerText = 'Generating...';
+
+            try {
+                const formData = new FormData();
+                formData.append('topic', topic);
+                formData.append('pages', pages);
+
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                currentTaskId = data.task_id;
+                renderOutline(data.outline);
+                showStep('step-outline');
+                updateSystemStatus('Awaiting Outline Approval');
+            } catch (err) {
+                alert('Error generating outline: ' + err.message);
+            } finally {
+                document.getElementById('btn-generate-outline').disabled = false;
+                document.getElementById('btn-generate-outline').innerText = 'Generate Outline';
+            }
+        });
+
+        // Action: Submit Feedback
+        document.getElementById('btn-submit-feedback').addEventListener('click', async () => {
+            const feedback = document.getElementById('feedback').value.trim();
+            if (!feedback) {
+                alert('Please enter revision feedback.');
+                return;
+            }
+
+            updateSystemStatus('Revising Outline...');
+            document.getElementById('btn-submit-feedback').disabled = true;
+            document.getElementById('btn-submit-feedback').innerText = 'Revising...';
+
+            try {
+                const formData = new FormData();
+                formData.append('task_id', currentTaskId);
+                formData.append('feedback', feedback);
+
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                renderOutline(data.outline);
+                document.getElementById('feedback').value = '';
+                updateSystemStatus('Awaiting Outline Approval');
+            } catch (err) {
+                alert('Error revising outline: ' + err.message);
+            } finally {
+                document.getElementById('btn-submit-feedback').disabled = false;
+                document.getElementById('btn-submit-feedback').innerText = 'Revise Outline';
+            }
+        });
+
+        // Action: Approve & Generate
+        document.getElementById('btn-approve-outline').addEventListener('click', async () => {
+            updateSystemStatus('Generating Document...');
+            showStep('step-generating');
+
+            try {
+                const formData = new FormData();
+                formData.append('task_id', currentTaskId);
+
+                await fetch('/api/approve', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // Establish SSE listener
+                startStreamingProgress(currentTaskId);
+            } catch (err) {
+                alert('Error approving outline: ' + err.message);
+            }
+        });
+
+        // Rendering helper for outline tree
+        function renderOutline(outline) {
+            const container = document.getElementById('outline-display-container');
+            container.innerHTML = `<h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; color: #fff;">${outline.title}</h3>`;
+
+            outline.sections.forEach((sec, idx) => {
+                const secDiv = document.createElement('div');
+                secDiv.className = 'tree-node';
+                
+                const heading = document.createElement('div');
+                heading.className = 'tree-node-heading';
+                heading.innerHTML = `<span style="color: var(--primary); font-weight: bold;">${idx + 1}.</span> ${sec.heading}`;
+                secDiv.appendChild(heading);
+
+                if (sec.subheadings && sec.subheadings.length > 0) {
+                    const subList = document.createElement('div');
+                    subList.className = 'tree-node-sub';
+                    sec.subheadings.forEach(sub => {
+                        const subItem = document.createElement('div');
+                        subItem.className = 'tree-node-sub-item';
+                        subItem.innerHTML = `<span style="color: rgba(255,255,255,0.3);">&bull;</span> ${sub}`;
+                        subList.appendChild(subItem);
+                    });
+                    secDiv.appendChild(subList);
+                }
+
+                container.appendChild(secDiv);
+            });
+        }
+
+        // Live Log SSE streaming
+        function startStreamingProgress(taskId) {
+            const consoleWindow = document.getElementById('console-output');
+            const progressBar = document.getElementById('progress-bar');
+            consoleWindow.innerHTML = '';
+            
+            const eventSource = new EventSource(`/api/stream/${taskId}`);
+            let stepCount = 0;
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'log') {
+                    appendConsoleLog(data.data.message);
+                    stepCount++;
+                    const progressPercent = Math.min((stepCount / 20) * 100, 95);
+                    progressBar.style.width = `${progressPercent}%`;
+                } else if (data.type === 'complete') {
+                    eventSource.close();
+                    progressBar.style.width = '100%';
+                    updateSystemStatus('Quality Check Complete');
+                    renderDecisionPage(data.data);
+                } else if (data.type === 'failed') {
+                    eventSource.close();
+                    updateSystemStatus('Generation Failed');
+                    alert('Document generation failed: ' + data.data.message);
+                }
+            };
+
+            eventSource.onerror = function() {
+                eventSource.close();
+            };
+        }
+
+        function appendConsoleLog(message) {
+            const consoleWindow = document.getElementById('console-output');
+            const log = document.createElement('div');
+            log.className = 'log-entry';
+
+            if (message.includes('FAILED') || message.includes('WARNING')) {
+                log.classList.add('important');
+            } else if (message.includes('Score') || message.includes('success') || message.includes('saved')) {
+                log.classList.add('success');
+            }
+
+            log.textContent = message;
+            consoleWindow.appendChild(log);
+            consoleWindow.scrollTop = consoleWindow.scrollHeight;
+        }
+
+        // Setup Decision Screen
+        function renderDecisionPage(results) {
+            const fScore = results.scores.faithfulness;
+            const cScore = results.scores.coherence;
+            currentFilename = results.filename;
+
+            const faithfulnessEl = document.getElementById('score-faithfulness');
+            faithfulnessEl.innerText = fScore.toFixed(2);
+            if (fScore >= 0.85) {
+                faithfulnessEl.className = 'metric-score pass';
+            } else {
+                faithfulnessEl.className = 'metric-score fail';
+            }
+
+            const coherenceEl = document.getElementById('score-coherence');
+            coherenceEl.innerText = cScore;
+            if (cScore === 1) {
+                coherenceEl.className = 'metric-score pass';
+            } else {
+                coherenceEl.className = 'metric-score fail';
+            }
+
+            const promptMsg = document.getElementById('decision-prompt-msg');
+            if (fScore < 0.85) {
+                promptMsg.innerText = '⚠️ Quality check failed. Click Accept to download anyway, or Reject to delete.';
+            } else {
+                promptMsg.innerText = '✅ Document meets all quality standards.';
+            }
+
+            // Populate Doc Preview
+            const previewContainer = document.getElementById('doc-preview');
+            previewContainer.innerHTML = '';
+            
+            const titleEl = document.createElement('div');
+            titleEl.className = 'preview-doc-title';
+            titleEl.innerText = document.getElementById('topic').value.trim();
+            previewContainer.appendChild(titleEl);
+
+            results.preview.forEach(p => {
+                const block = document.createElement('div');
+                if (p.type === 'section') {
+                    block.className = 'preview-section';
+                    block.innerHTML = `<h4 class="preview-section-heading">${p.heading}</h4>
+                                       <p class="preview-section-content">${p.content}</p>`;
+                } else {
+                    block.className = 'preview-subsection';
+                    block.innerHTML = `<h5 class="preview-subsection-heading">${p.heading}</h5>
+                                       <p class="preview-section-content">${p.content}</p>`;
+                }
+                previewContainer.appendChild(block);
+            });
+
+            showStep('step-decision');
+        }
+
+        // Action Decision: Accept & Download
+        document.getElementById('btn-accept').addEventListener('click', async () => {
+            const formData = new FormData();
+            formData.append('task_id', currentTaskId);
+            formData.append('choice', 'accept');
+
+            await fetch('/api/decide', {
+                method: 'POST',
+                body: formData
+            });
+
+            // Trigger file download
+            window.location.href = `/api/download/${currentFilename}`;
+            
+            // Return to start
+            setTimeout(() => {
+                resetApp();
+            }, 1000);
+        });
+
+        // Action Decision: Reject
+        document.getElementById('btn-reject').addEventListener('click', async () => {
+            const formData = new FormData();
+            formData.append('task_id', currentTaskId);
+            formData.append('choice', 'reject');
+
+            await fetch('/api/decide', {
+                method: 'POST',
+                body: formData
+            });
+
+            alert('Document rejected and deleted.');
+            resetApp();
+        });
+
+        function resetApp() {
+            document.getElementById('topic').value = '';
+            document.getElementById('pages').value = '1';
+            updateSystemStatus('System Idle');
+            showStep('step-setup');
+        }
+    </script>
+</body>
+</html>

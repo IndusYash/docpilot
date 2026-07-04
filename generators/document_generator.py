@@ -18,7 +18,8 @@ class DocumentGenerator:
     def generate(
         self,
         outline,
-        content_plan
+        content_plan,
+        quality_feedback: str = None
     ):
 
         sections = []
@@ -39,7 +40,8 @@ class DocumentGenerator:
 
             generated_section = (
                 self.section_generator.generate(
-                    section_plan
+                    section_plan,
+                    quality_feedback=quality_feedback
                 )
             )
 
@@ -77,4 +79,4 @@ class DocumentGenerator:
             )
         )
 
-        return document
+        return document

@@ -8,13 +8,12 @@ class PDFPageCounter:
         pdf_path
     ):
 
-        pdf = fitz.open(
+        with fitz.open(
             pdf_path
-        )
-
-        pages = (
-            len(pdf)
-        )
+        ) as pdf:
+            pages = (
+                len(pdf)
+            )
 
         print(
             f"\nPDF Page Count: {pages}"

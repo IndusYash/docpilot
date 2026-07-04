@@ -151,122 +151,156 @@ def main():
             )
 
             # ======================
-            # DOCUMENT GENERATION
+            # QUALITY RETRY LOOP
             # ======================
+            from repair.quality_guardrail import QualityGuardrail
+            import os
 
-            document_generator = (
-                DocumentGenerator()
-            )
+            MAX_QUALITY_RETRIES = 3
+            guardrail = QualityGuardrail()
+            quality_feedback = None
+            document_accepted = False
 
-            document = (
-                document_generator.generate(
-                    state.current_outline,
-                    content_plan
-                )
-            )
+            for quality_attempt in range(MAX_QUALITY_RETRIES):
 
-            print(
-                "\n===== GENERATED DOCUMENT =====\n"
-            )
-
-            print(
-                document.model_dump_json(
-                    indent=4
-                )
-            )
-
-            # ======================
-            # DOCX BUILD
-            # ======================
-
-            builder = (
-                DocxBuilder()
-            )
-
-            safe_title = re.sub(
-                r"[^a-zA-Z0-9]+",
-                "_",
-                state.title.strip()
-            )
-
-            timestamp = datetime.now().strftime(
-                "%Y%m%d_%H%M%S"
-            )
-
-            output_path = (
-                f"output/"
-                f"{safe_title}_"
-                f"{timestamp}.docx"
-            )
-
-            output_file = (
-                builder.build(
-                    document,
-                    output_path
-                )
-            )
-
-            compressor = (
-                TargetedCompressor()
-            )
-
-            for iteration in range(
-                MAX_REPAIR_PASSES
-            ):
-
-                pdf_path = (
-                    PDFConverter.convert(
-                        output_file
-                    )
-                )
-
-                actual_pages = (
-                    PDFPageCounter.count(
-                        pdf_path
-                    )
-                )
-
-                overflow_words = (
-                    OverflowWordCounter.count(
-                        pdf_path,
-                        state.pages
-                    )
-                )
-
-                print(
-                    f"\n===== REPAIR PASS {iteration + 1} ====="
-                )
-
-                print(
-                    f"PDF Pages: {actual_pages}"
-                )
-
-                print(
-                    f"Overflow Words: {overflow_words}"
-                )
-
-                if (
-                    actual_pages <= state.pages
-                ):
-
+                if quality_attempt > 0:
                     print(
-                        "\nTarget reached."
+                        f"\n[Quality Retry {quality_attempt + 1}/{MAX_QUALITY_RETRIES}] "
+                        f"Regenerating with quality feedback injected..."
                     )
 
-                    break
-
-                words_to_remove = (
-                    overflow_words
-                )
-
-                print(
-                    f"\nCompressing by ~{words_to_remove} words"
+                # --- DOCUMENT GENERATION ---
+                document_generator = (
+                    DocumentGenerator()
                 )
 
                 document = (
-                    compressor.compress(
+                    document_generator.generate(
+                        state.current_outline,
+                        content_plan,
+                        quality_feedback=quality_feedback
+                    )
+                )
+
+                print(
+                    "\n===== GENERATED DOCUMENT =====\n"
+                )
+
+                print(
+                    document.model_dump_json(
+                        indent=4
+                    )
+                )
+
+                # --- DOCX BUILD ---
+                builder = (
+                    DocxBuilder()
+                )
+
+                safe_title = re.sub(
+                    r"[^a-zA-Z0-9]+",
+                    "_",
+                    state.title.strip()
+                )
+
+                timestamp = datetime.now().strftime(
+                    "%Y%m%d_%H%M%S"
+                )
+
+                output_path = (
+                    f"output/"
+                    f"{safe_title}_"
+                    f"{timestamp}.docx"
+                )
+
+                output_file = (
+                    builder.build(
                         document,
-                        words_to_remove
+                        output_path
+                    )
+                )
+
+                compressor = (
+                    TargetedCompressor()
+                )
+
+                for iteration in range(
+                    MAX_REPAIR_PASSES
+                ):
+
+                    pdf_path = (
+                        PDFConverter.convert(
+                            output_file
+                        )
+                    )
+
+                    actual_pages = (
+                        PDFPageCounter.count(
+                            pdf_path
+                        )
+                    )
+
+                    overflow_words = (
+                        OverflowWordCounter.count(
+                            pdf_path,
+                            state.pages
+                        )
+                    )
+
+                    print(
+                        f"\n===== REPAIR PASS {iteration + 1} ====="
+                    )
+
+                    print(
+                        f"PDF Pages: {actual_pages}"
+                    )
+
+                    print(
+                        f"Overflow Words: {overflow_words}"
+                    )
+
+                    if (
+                        actual_pages <= state.pages
+                    ):
+
+                        print(
+                            "\nTarget reached."
+                        )
+
+                        break
+
+                    words_to_remove = (
+                        overflow_words
+                    )
+
+                    print(
+                        f"\nCompressing by ~{words_to_remove} words"
+                    )
+
+                    document = (
+                        compressor.compress(
+                            document,
+                            words_to_remove
+                        )
+                    )
+
+                    output_file = (
+                        builder.build(
+                            document,
+                            output_path
+                        )
+                    )
+
+                quality_loop = (
+                    LastPageQualityLoop()
+                )
+
+                document = (
+                    quality_loop.repair(
+                        document=document,
+                        target_pages=state.pages,
+                        builder=builder,
+                        output_path=output_path
                     )
                 )
 
@@ -276,25 +310,62 @@ def main():
                         output_path
                     )
                 )
-            quality_loop = (
-                LastPageQualityLoop()
-            )
 
-            document = (
-                quality_loop.repair(
-                    document=document,
-                    target_pages=state.pages,
-                    builder=builder,
-                    output_path=output_path
+                # --- QUALITY GUARDRAIL CHECK ---
+                scores = guardrail.evaluate_generation(
+                    state.current_outline, document
                 )
-            )
 
-            output_file = (
-                builder.build(
-                    document,
-                    output_path
+                print("\n===== QUALITY GUARDRAIL RESULTS =====")
+                print(f"Faithfulness Score: {scores['faithfulness']:.2f} (Threshold: >= 0.85)")
+                print(f"Coherence Score:    {scores['coherence']} (Pass: 1, Fail: 0)")
+
+                if scores['faithfulness'] >= 0.85:
+                    document_accepted = True
+                    break
+
+                # Build targeted feedback for the next retry
+                quality_feedback = (
+                    f"Previous attempt FAILED the quality check "
+                    f"(Faithfulness: {scores['faithfulness']:.2f}/1.00). "
+                    f"The content was too generic and not grounded in the exact outline topics. "
+                    f"You MUST strictly write about the exact headings and subheadings provided. "
+                    f"Do NOT use placeholder phrases like 'this section provides an overview' or "
+                    f"'the topic holds significant relevance'. Instead, write specific, factual, "
+                    f"detailed content directly about each heading's subject matter."
                 )
-            )
+
+                print(
+                    f"\n[WARNING] Quality check failed "
+                    f"(attempt {quality_attempt + 1}/{MAX_QUALITY_RETRIES}). "
+                    f"Auto-retrying with feedback..."
+                )
+
+                # Clean up the failed file before retrying
+                if os.path.exists(output_file):
+                    try:
+                        os.remove(output_file)
+                    except Exception:
+                        pass
+
+            # --- FINAL DECISION ---
+            if not document_accepted:
+                print(
+                    f"\n[WARNING] Document failed quality checks after "
+                    f"{MAX_QUALITY_RETRIES} attempts."
+                )
+                print(f"Final Faithfulness Score: {scores['faithfulness']:.2f}")
+                choice = input(
+                    "Do you want to accept or reject this document? [accept/reject]: "
+                ).strip().lower()
+                if choice == "reject":
+                    print("\nDocument rejected. Cleaning up generated file...")
+                    if os.path.exists(output_file):
+                        try:
+                            os.remove(output_file)
+                        except Exception as e:
+                            print(f"Failed to delete document: {e}")
+                    break
 
             print(
                 f"\nDocument saved to:\n"

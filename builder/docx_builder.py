@@ -109,17 +109,17 @@ class DocxBuilder:
                     subsection.content
                 )
 
-        timestamp = (
-            datetime.now()
-            .strftime(
-                "%Y%m%d_%H%M%S"
+        if not output_path:
+            timestamp = (
+                datetime.now()
+                .strftime(
+                    "%Y%m%d_%H%M%S"
+                )
             )
-        )
-
-        output_path = (
-            f"output/generated_report_"
-            f"{timestamp}.docx"
-        )
+            output_path = (
+                f"output/generated_report_"
+                f"{timestamp}.docx"
+            )
 
         doc.save(
             output_path

@@ -5,7 +5,7 @@ from llm.json_extractor import (
 )
 
 from prompts.section_prompt import (
-    SECTION_SYSTEM_PROMPT
+    build_section_prompt
 )
 
 from schemas.document import (
@@ -21,8 +21,13 @@ class SectionGenerator:
 
     def generate(
         self,
-        section_plan
+        section_plan,
+        quality_feedback: str = None
     ):
+
+        system_prompt = build_section_prompt(
+            quality_feedback=quality_feedback
+        )
 
         prompt = f"""
 Generate this section.
@@ -43,7 +48,7 @@ Subsections:
         response = (
             self.router.generate(
                 prompt=prompt,
-                system_prompt=SECTION_SYSTEM_PROMPT
+                system_prompt=system_prompt
             )
         )
         print(
@@ -64,4 +69,4 @@ Subsections:
             DocumentSection.model_validate_json(
                 response
             )
-        )
+        )
